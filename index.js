@@ -2,6 +2,34 @@ const express = require("express");
 const admin = require("firebase-admin");
 require("dotenv").config();
 
+const axios = require("axios");
+
+const BOT_TOKEN = "8968729641:AAFZjjFZo55YiTLE1tk6cLNZ0YsyE5Gf-l0";
+const CHAT_ID = "5279773215";
+
+async function sendTelegram(message) {
+    try {
+        const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+
+        await axios.post(url, {
+            chat_id: CHAT_ID,
+            text: message
+        });
+
+        console.log("Telegram message sent!");
+    } catch (err) {
+        console.error(err.response?.data || err.message);
+    }
+}
+
+
+app.get("/telegram", async (req, res) => {
+
+    await sendTelegram("🚀 Telegram test from Render!");
+
+    res.send("Telegram message sent!");
+});
+
 // If using Render environment variable:
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
