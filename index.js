@@ -24,8 +24,8 @@ app.get("/", (req, res) => {
 app.get("/test", async (req, res) => {
     const message = {
         notification: {
-            title: "Test Notification",
-            body: "Hello from Render!",
+            title: "Alert",
+            body: "Battery is low! Saving mode enabled.",
         },
         topic: "esp32_alerts",
     };
