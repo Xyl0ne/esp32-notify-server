@@ -1,57 +1,55 @@
 const express = require("express");
 const admin = require("firebase-admin");
+const axios = require("axios");
 require("dotenv").config();
 
-const axios = require("axios");
+const app = express();
+app.use(express.json());
 
-const BOT_TOKEN = "8968729641:AAFZjjFZo55YiTLE1tk6cLNZ0YsyE5Gf-l0";
-const CHAT_ID = "5279773215";
-
-
-// If using Render environment variable:
+// ==========================
+// Firebase
+// ==========================
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-
-// If testing locally with service-account.json instead, use:
-// const serviceAccount = require("./service-account.json");
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
 });
 
-const app = express();
-app.use(express.json());
+// ==========================
+// Telegram
+// ==========================
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 async function sendTelegram(message) {
     try {
-        const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+        await axios.post(
+            `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
+            {
+                chat_id: CHAT_ID,
+                text: message,
+            }
+        );
 
-        await axios.post(url, {
-            chat_id: CHAT_ID,
-            text: message
-        });
-
-        console.log("Telegram message sent!");
+        console.log("Telegram message sent.");
     } catch (err) {
+        console.error("Telegram Error:");
         console.error(err.response?.data || err.message);
     }
 }
 
-
-app.get("/telegram", async (req, res) => {
-
-    await sendTelegram("🚀 Telegram test from Render!");
-
-    res.send("Telegram message sent!");
-});
-
-
-// Home page
+// ==========================
+// Home
+// ==========================
 app.get("/", (req, res) => {
     res.send("ESP32 Notification Server is Running!");
 });
 
-// ===== TEST NOTIFICATION =====
+// ==========================
+// Flutter Notification Test
+// ==========================
 app.get("/test", async (req, res) => {
+
     const message = {
         notification: {
             title: "Alert",
@@ -61,36 +59,102 @@ app.get("/test", async (req, res) => {
     };
 
     try {
+
         const response = await admin.messaging().send(message);
-        console.log("Notification sent:", response);
-        res.send("✅ Notification sent!");
+
+        console.log(response);
+
+        res.send("Flutter notification sent!");
+
     } catch (err) {
+
         console.error(err);
+
         res.status(500).send(err.message);
+
     }
+
 });
 
-// ===== ESP32 ENDPOINT =====
-app.post("/notify", async (req, res) => {
-    const { title, body } = req.body;
+// ==========================
+// Telegram Test
+// ==========================
+app.get("/telegram", async (req, res) => {
+
+    await sendTelegram("🚀 Telegram test from Render!");
+
+    res.send("Telegram message sent!");
+
+});
+
+// ==========================
+// Flutter + Telegram Test
+// ==========================
+app.get("/alert", async (req, res) => {
 
     const message = {
-        notification: { title, body },
+        notification: {
+            title: "ESP32 Alert",
+            body: "This is a combined Flutter + Telegram notification.",
+        },
         topic: "esp32_alerts",
     };
 
     try {
-        const response = await admin.messaging().send(message);
-        console.log("Notification sent:", response);
-        res.send("sent");
+
+        await admin.messaging().send(message);
+
+        await sendTelegram(
+            "🚨 ESP32 Alert\nThis is a combined Flutter + Telegram notification."
+        );
+
+        res.send("Flutter + Telegram notification sent!");
+
     } catch (err) {
+
         console.error(err);
+
         res.status(500).send(err.message);
+
     }
+
+});
+
+// ==========================
+// ESP32 Endpoint
+// ==========================
+app.post("/notify", async (req, res) => {
+
+    const { title, body } = req.body;
+
+    const message = {
+        notification: {
+            title,
+            body,
+        },
+        topic: "esp32_alerts",
+    };
+
+    try {
+
+        await admin.messaging().send(message);
+
+        await sendTelegram(`📢 ${title}\n\n${body}`);
+
+        res.send("Notification sent.");
+
+    } catch (err) {
+
+        console.error(err);
+
+        res.status(500).send(err.message);
+
+    }
+
 });
 
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, () => {
-    console.log(`Server listening on ${PORT}`);
+    console.log(`Server listening on port ${PORT}`);
 });
