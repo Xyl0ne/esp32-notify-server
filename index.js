@@ -18,8 +18,8 @@ admin.initializeApp({
 // ==========================
 // Telegram
 // ==========================
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+const BOT_TOKEN = "8968729641:AAFZjjFZo55YiTLE1tk6cLNZ0YsyE5Gf-l0"; 
+const CHAT_ID = "5279773215";
 
 async function sendTelegram(message) {
     try {
